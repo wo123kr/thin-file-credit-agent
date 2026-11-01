@@ -83,6 +83,19 @@ def plot(y, thin, risks: dict) -> None:
     fig.tight_layout(), fig.savefig(REPORTS / "thin_approval_curve.png", dpi=130)
 
 
+def test_risks():
+    """(meta, 피처 묶음, 에이전트 열, 묶음별 시험 데이터 위험도). 결정적이라 다시 불러도 같은 값."""
+    meta, feats = frame()
+    a_cols, b_cols = list(tier("a").columns), list(feats.columns)
+    sets, agent_cols = {"A": a_cols, "B": b_cols}, {}
+    for name, start in (("B+agent", b_cols), ("A+agent", a_cols)):
+        feats, cols = agent_features(meta, feats, ACCEPTED[name])
+        agent_cols[name] = cols
+        if cols:                              # 채택이 0개면 그 묶음은 앞의 것과 같으므로 빼고 기록만
+            sets[name] = start + cols
+    return meta, sets, agent_cols, {k: predict(feats, cols, meta) for k, cols in sets.items()}
+
+
 def git_head() -> str:
     r = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True)
     return r.stdout.strip() or "(커밋 전)"
@@ -92,17 +105,9 @@ def main(force: bool) -> None:
     if GUARD.exists() and not force:
         sys.exit(f"시험 데이터는 이미 열었습니다: {GUARD.read_text(encoding='utf-8')}")
     plt.rcParams["font.family"] = ["AppleGothic", "DejaVu Sans"]
-    meta, feats = frame()
-    a_cols, b_cols = list(tier("a").columns), list(feats.columns)
-    sets, agent_cols = {"A": a_cols, "B": b_cols}, {}
-    for name, start in (("B+agent", b_cols), ("A+agent", a_cols)):
-        feats, cols = agent_features(meta, feats, ACCEPTED[name])
-        agent_cols[name] = cols
-        if cols:                              # 채택이 0개면 그 묶음은 앞의 것과 같으므로 빼고 기록만
-            sets[name] = start + cols
+    meta, sets, agent_cols, risks = test_risks()
     tm = meta[meta["part"] == "test"]
     y, thin = tm["is_default"].to_numpy(), tm["thin"].to_numpy()
-    risks = {k: predict(feats, cols, meta) for k, cols in sets.items()}
     results = {
         "opened_at": datetime.now().isoformat(timespec="seconds"), "commit": git_head(),
         "accepted_sha1": {k: hashlib.sha1(p.read_bytes()).hexdigest()[:10] for k, p in ACCEPTED.items() if p.exists()},

@@ -1,0 +1,233 @@
+{
+  "opened_at": "2026-11-02T01:02:33",
+  "commit": "f1087a0",
+  "accepted_sha1": {
+    "B+agent": "97d170e155",
+    "A+agent": "599f912d41"
+  },
+  "test": {
+    "n": 6000,
+    "thin_n": 756,
+    "thin_bad": 196
+  },
+  "features": {
+    "A": 6,
+    "B": 17,
+    "A+agent": 10
+  },
+  "agent_columns": {
+    "B+agent": [],
+    "A+agent": [
+      "f_status_trend",
+      "f_status_std",
+      "f_pay_cover_avg",
+      "f_underpay_cnt"
+    ]
+  },
+  "scores": {
+    "A": {
+      "all": {
+        "auc": 0.7679,
+        "ks": 0.3892
+      },
+      "thin": {
+        "auc": 0.6399,
+        "ks": 0.2151
+      }
+    },
+    "B": {
+      "all": {
+        "auc": 0.7835,
+        "ks": 0.4325
+      },
+      "thin": {
+        "auc": 0.6753,
+        "ks": 0.2602
+      }
+    },
+    "A+agent": {
+      "all": {
+        "auc": 0.7782,
+        "ks": 0.4268
+      },
+      "thin": {
+        "auc": 0.6539,
+        "ks": 0.2503
+      }
+    }
+  },
+  "thin_uplift": {
+    "A->B@50": {
+      "target_bad_rate": 0.1852,
+      "approve_base": 0.5013,
+      "approve_new": 0.6653,
+      "uplift": 0.164,
+      "ci95": [
+        -0.07149470899470901,
+        0.3109126984126983
+      ],
+      "share_positive": 0.933,
+      "n": 1000
+    },
+    "A->B@70": {
+      "target_bad_rate": 0.2174,
+      "approve_base": 0.7011,
+      "approve_new": 0.881,
+      "uplift": 0.1799,
+      "ci95": [
+        0.0026124338624338903,
+        0.1997685185185185
+      ],
+      "share_positive": 0.976,
+      "n": 1000
+    },
+    "A->B@90": {
+      "target_bad_rate": 0.2426,
+      "approve_base": 0.9484,
+      "approve_new": 0.963,
+      "uplift": 0.0146,
+      "ci95": [
+        -0.019841269841269882,
+        0.06216931216931221
+      ],
+      "share_positive": 0.55,
+      "n": 1000
+    },
+    "A->A+agent@50": {
+      "target_bad_rate": 0.1852,
+      "approve_base": 0.5013,
+      "approve_new": 0.6098,
+      "uplift": 0.1085,
+      "ci95": [
+        -0.15615079365079362,
+        0.25135582010582
+      ],
+      "share_positive": 0.853,
+      "n": 1000
+    },
+    "A->A+agent@70": {
+      "target_bad_rate": 0.2174,
+      "approve_base": 0.7011,
+      "approve_new": 0.8161,
+      "uplift": 0.1151,
+      "ci95": [
+        -0.02655423280423285,
+        0.17460317460317454
+      ],
+      "share_positive": 0.922,
+      "n": 1000
+    },
+    "A->A+agent@90": {
+      "target_bad_rate": 0.2426,
+      "approve_base": 0.9484,
+      "approve_new": 0.9603,
+      "uplift": 0.0119,
+      "ci95": [
+        -0.02781084656084657,
+        0.05687830687830697
+      ],
+      "share_positive": 0.406,
+      "n": 1000
+    },
+    "A+agent->B@50": {
+      "target_bad_rate": 0.1799,
+      "approve_base": 0.5899,
+      "approve_new": 0.6124,
+      "uplift": 0.0225,
+      "ci95": [
+        -0.11250000000000006,
+        0.1468584656084656
+      ],
+      "share_positive": 0.772,
+      "n": 1000
+    },
+    "A+agent->B@70": {
+      "target_bad_rate": 0.2004,
+      "approve_base": 0.713,
+      "approve_new": 0.7553,
+      "uplift": 0.0423,
+      "ci95": [
+        -0.021197089947089943,
+        0.14682539682539675
+      ],
+      "share_positive": 0.919,
+      "n": 1000
+    },
+    "A+agent->B@90": {
+      "target_bad_rate": 0.2394,
+      "approve_base": 0.9405,
+      "approve_new": 0.9577,
+      "uplift": 0.0172,
+      "ci95": [
+        -0.030423280423280463,
+        0.041005291005290934
+      ],
+      "share_positive": 0.665,
+      "n": 1000
+    }
+  },
+  "fairness_approve80": {
+    "B": {
+      "sex": {
+        "남": {
+          "n": 2402,
+          "approve_rate": 0.7906,
+          "bad_rate_approved": 0.1485
+        },
+        "여": {
+          "n": 3598,
+          "approve_rate": 0.8063,
+          "bad_rate_approved": 0.1258
+        }
+      },
+      "age": {
+        "~29": {
+          "n": 1912,
+          "approve_rate": 0.7777,
+          "bad_rate_approved": 0.1271
+        },
+        "30~44": {
+          "n": 3002,
+          "approve_rate": 0.8145,
+          "bad_rate_approved": 0.1305
+        },
+        "45~": {
+          "n": 1086,
+          "approve_rate": 0.7993,
+          "bad_rate_approved": 0.1601
+        }
+      }
+    },
+    "A+agent": {
+      "sex": {
+        "남": {
+          "n": 2402,
+          "approve_rate": 0.7843,
+          "bad_rate_approved": 0.1481
+        },
+        "여": {
+          "n": 3598,
+          "approve_rate": 0.811,
+          "bad_rate_approved": 0.1299
+        }
+      },
+      "age": {
+        "~29": {
+          "n": 1912,
+          "approve_rate": 0.7798,
+          "bad_rate_approved": 0.1328
+        },
+        "30~44": {
+          "n": 3002,
+          "approve_rate": 0.8158,
+          "bad_rate_approved": 0.1323
+        },
+        "45~": {
+          "n": 1086,
+          "approve_rate": 0.7937,
+          "bad_rate_approved": 0.1578
+        }
+      }
+    }
+  }
+}

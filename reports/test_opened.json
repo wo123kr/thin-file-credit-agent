@@ -1,0 +1,13 @@
+[
+  {
+    "opened_at": "2026-11-02T01:02:33",
+    "commit": "f1087a0",
+    "forced": false
+  },
+  {
+    "opened_at": "2026-11-02T01:03:21",
+    "commit": "f1087a0",
+    "forced": false,
+    "purpose": "보조 지표 계산(같은 승인율의 연체율). 모형 · 피처 변경 없음"
+  }
+]
