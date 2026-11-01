@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+data/raw/
+data/*.duckdb
+*.pyc
+.DS_Store
+data/
+agent_runs/
+*.log

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "상태_추세와_변동",
+    "hypothesis": "최근 3달 평균 상환 상태와 이전 3달 평균의 차이는 악화·개선 방향을 나타내며, 9월 단일 상태로는 알 수 없는 변화를 포착한다.",
+    "sql": "SELECT c.id, AVG(CASE WHEN m.month <= 3 THEN m.status END) - AVG(CASE WHEN m.month > 3 THEN m.status END) AS f_status_trend, STDDEV_POP(m.status) AS f_status_std FROM clients c LEFT JOIN monthly m ON m.id = c.id GROUP BY c.id",
+    "columns": [
+      "f_status_trend",
+      "f_status_std"
+    ]
+  },
+  {
+    "name": "청구납부_짝_커버리지",
+    "hypothesis": "납부액이 직전 달 청구액을 얼마나 덮었는지(상환 커버리지)는 상환 의지와 여력을 보여준다. 청구가 있었던 달들만 평균해 이력이 얇아도 계산되며, 부족하게 낸 달의 수도 연체 위험을 나타낸다.",
+    "sql": "SELECT c.id, AVG(CASE WHEN p.bill > 0 THEN LEAST(m.paid / p.bill, 2.0) END) AS f_pay_cover_avg, SUM(CASE WHEN p.bill > 0 AND m.paid < p.bill THEN 1 ELSE 0 END) AS f_underpay_cnt FROM clients c LEFT JOIN monthly m ON m.id = c.id LEFT JOIN monthly p ON p.id = m.id AND p.month = m.month + 1 GROUP BY c.id",
+    "columns": [
+      "f_pay_cover_avg",
+      "f_underpay_cnt"
+    ]
+  }
+]
