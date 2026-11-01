@@ -33,6 +33,8 @@ class Sandbox:
         return con
 
     def check(self, sql: str) -> None:
+        if not isinstance(sql, str) or not sql.strip():
+            raise SqlRejected("SQL 이 비었거나 문자열이 아닙니다")
         con = duckdb.connect()   # 문장 검사는 빈 메모리 DB 에서(표가 없어도 직렬화는 된다)
         try:
             raw = con.execute("SELECT json_serialize_sql(?::VARCHAR)", [sql]).fetchone()[0]
@@ -44,7 +46,7 @@ class Sandbox:
         if len(tree.get("statements", [])) != 1:
             raise SqlRejected("문장은 하나만 쓸 수 있습니다")
         tables, table_funcs = set(), []
-        _walk(tree, tables, table_funcs)
+        _walk(tree, tables, table_funcs, frozenset())
         if table_funcs:
             raise SqlRejected(f"표 함수는 쓸 수 없습니다: {table_funcs}")
         bad = tables - ALLOWED_TABLES
@@ -67,19 +69,24 @@ class Sandbox:
             con.close()
 
 
-def _walk(node, tables: set, table_funcs: list) -> None:
-    """구문 나무에서 읽는 표 이름과 표 함수를 모은다. CTE 이름은 표가 아니므로 뺀다."""
+def _walk(node, tables: set, table_funcs: list, scope: frozenset) -> None:
+    """구문 나무에서 읽는 진짜 표 이름과 표 함수를 모은다.
+
+    CTE 이름은 그 CTE 가 정의된 범위(그 아래 나무) 안에서만 표가 아닌 것으로 본다.
+    다른 범위의 같은 이름 표를 가리지 않게(예: 바깥에서 진짜 표 x 를 읽고 안쪽 CTE 이름도 x).
+    """
     if isinstance(node, dict):
+        cte = node.get("cte_map", {}).get("map") if isinstance(node.get("cte_map"), dict) else None
+        if cte:
+            scope = scope | {str(item.get("key", "")).lower() for item in cte}
         if node.get("type") == "BASE_TABLE":
-            tables.add(str(node.get("table_name", "")).lower())
+            name = str(node.get("table_name", "")).lower()
+            if name not in scope or node.get("schema_name") or node.get("catalog_name"):
+                tables.add(name)
         if node.get("type") == "TABLE_FUNCTION":
             table_funcs.append(str(node.get("function", {}).get("function_name", "?")))
-        cte = node.get("cte_map", {}).get("map") if isinstance(node.get("cte_map"), dict) else None
         for v in node.values():
-            _walk(v, tables, table_funcs)
-        if cte:
-            for item in cte:
-                tables.discard(str(item.get("key", "")).lower())
+            _walk(v, tables, table_funcs, scope)
     elif isinstance(node, list):
         for v in node:
-            _walk(v, tables, table_funcs)
+            _walk(v, tables, table_funcs, scope)

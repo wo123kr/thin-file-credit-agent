@@ -48,13 +48,16 @@ def run(rounds: int, per_round: int, llm=claude_cli, out_dir: Path | None = None
     for r in range(1, rounds + 1):
         try:
             reply = parse_json(llm(prompt.SYSTEM, prompt.build(desc, history, per_round)))
-            proposals = reply.get("proposals", [])[:per_round]
+            proposals = reply.get("proposals") if isinstance(reply, dict) else None
+            if not isinstance(proposals, list):
+                raise LLMError(f"proposals 가 목록이 아님: {type(proposals).__name__}")
+            proposals = proposals[:per_round]
         except LLMError as e:
             history.append({"round": r, "name": "(LLM 답 없음)", "hypothesis": "", "decision": "오류", "reason": str(e)})
             continue
         for p in proposals:
             t = time.time()
-            rec, new = ev.evaluate(p if isinstance(p, dict) else {})
+            rec, new = ev.evaluate(p)
             rec.update(round=r, seconds=round(time.time() - t, 1))
             history.append(rec)
             log.write(prompt.dump(rec) + "\n")

@@ -30,6 +30,18 @@ class SandboxTest(unittest.TestCase):
             with self.subTest(q=q), self.assertRaises(SqlRejected):
                 self.sb.run(q)
 
+    def test_cte_name_does_not_hide_real_table_in_other_scope(self):
+        # 검토에서 찾은 우회: 다른 범위의 CTE 이름이 같은 이름의 진짜 표 읽기를 가렸다
+        q = "SELECT * FROM duckdb_databases z, (WITH duckdb_databases AS (SELECT 1 AS a) SELECT 1) t"
+        with self.assertRaises(SqlRejected):
+            self.sb.check(q)
+        self.sb.check("WITH t AS (SELECT id FROM clients) SELECT id, 1 AS f_ab FROM t")   # 제 범위의 CTE 는 그대로 됨
+
+    def test_non_string_sql_is_rejected_not_crash(self):
+        for q in (None, 123, "", "   "):
+            with self.subTest(q=q), self.assertRaises(SqlRejected):
+                self.sb.run(q)
+
     def test_connection_itself_blocks_files_even_without_check(self):
         # 문장 검사를 건너뛰어도 두 번째 겹(읽기 전용 + 외부 접근 끔)이 막는다
         con = self.sb.connect()
@@ -67,7 +79,8 @@ class ValidateTest(unittest.TestCase):
                  pd.DataFrame({"id": [1], "Bad": [1]}),                   # 이름 규칙
                  pd.DataFrame({"id": [1], "limit_bal": [1]}),             # 이미 있는 이름(규칙도 위반)
                  pd.DataFrame({"id": [1], **{f"f_{i}x": [1] for i in range(4)}}),  # 4개
-                 pd.DataFrame({"id": [1], "f_t": ["a"]})]                 # 숫자 아님
+                 pd.DataFrame({"id": [1], "f_t": ["a"]}),                 # 숫자 아님
+                 pd.DataFrame({"id": [[1]], "f_ab": [1]})]                 # id 가 리스트(검토에서 루프가 죽던 것)
         for c in cases:
             with self.subTest(cols=list(c.columns)), self.assertRaises(SqlRejected):
                 validate_new(c, self.ids, ["limit_bal", "f_dup"])
@@ -119,6 +132,17 @@ class LoopTest(unittest.TestCase):
         self.assertIn(by["마지막 연체 이후 경과"]["decision"], {"채택", "기각"})
         self.assertIn("delta_thin_mean", by["마지막 연체 이후 경과"])
         self.assertNotIn("is_default", fake.prompts[0])   # 프롬프트에 라벨 열 이름이 새지 않음
+
+    def test_odd_llm_replies_do_not_kill_loop(self):
+        from agent.llm import FakeLLM
+        from agent.loop import run
+        replies = [json.dumps({"proposals": {"not": "a list"}}),
+                   json.dumps({"proposals": [{"name": "널 SQL", "hypothesis": "", "sql": None}, "문자열 제안"]})]
+        with tempfile.TemporaryDirectory() as d:
+            hist = run(2, 4, llm=FakeLLM(replies), out_dir=Path(d))
+            self.assertTrue((Path(d) / "accepted.json").exists())
+        self.assertTrue(all(h["decision"] == "오류" for h in hist))
+        self.assertGreaterEqual(len(hist), 3)
 
 
 class FinalGuardTest(unittest.TestCase):

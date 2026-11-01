@@ -2,12 +2,14 @@
   {
     "opened_at": "2026-11-02T01:02:33",
     "commit": "f1087a0",
-    "forced": false
+    "forced": false,
+    "purpose": "최종 평가(final.py)"
   },
   {
     "opened_at": "2026-11-02T01:03:21",
     "commit": "f1087a0",
     "forced": false,
-    "purpose": "보조 지표 계산(같은 승인율의 연체율). 모형 · 피처 변경 없음"
+    "purpose": "보조 지표 계산(같은 승인율의 연체율). 모형 · 피처 변경 없음",
+    "note": "정정(2026-11-02, 검토 지적): 이 실행은 커밋 전 변경(final.test_risks 분리 · supplement.py)으로 돌았다. 그 코드는 187ff02 에 커밋됨. 당시 git_head 가 커밋 전 변경을 표시하지 못했다(지금은 -dirty)."
   }
 ]

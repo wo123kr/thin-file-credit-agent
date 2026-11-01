@@ -97,14 +97,26 @@ def test_risks():
 
 
 def git_head() -> str:
+    """지금 커밋. 추적 파일에 커밋하지 않은 변경이 있으면 -dirty 를 붙인다(기록된 커밋 = 실제로 돈 코드가 되게)."""
     r = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True)
-    return r.stdout.strip() or "(커밋 전)"
+    d = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT, capture_output=True, text=True)
+    return (r.stdout.strip() or "(커밋 전)") + ("-dirty" if d.stdout.strip() else "")
+
+
+def log_open(purpose: str, force: bool = False) -> None:
+    """시험 데이터를 열기 「전에」 기록한다. 계산 중에 죽어도 연 사실은 남는다."""
+    opened = json.loads(GUARD.read_text(encoding="utf-8")) if GUARD.exists() else []   # 지우지 않고 쌓는다
+    opened.append({"opened_at": datetime.now().isoformat(timespec="seconds"), "commit": git_head(),
+                   "forced": force, "purpose": purpose})
+    REPORTS.mkdir(exist_ok=True)
+    GUARD.write_text(json.dumps(opened, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def main(force: bool) -> None:
     if GUARD.exists() and not force:
         sys.exit(f"시험 데이터는 이미 열었습니다: {GUARD.read_text(encoding='utf-8')}")
     plt.rcParams["font.family"] = ["AppleGothic", "DejaVu Sans"]
+    log_open("최종 평가(final.py)", force)
     meta, sets, agent_cols, risks = test_risks()
     tm = meta[meta["part"] == "test"]
     y, thin = tm["is_default"].to_numpy(), tm["thin"].to_numpy()
@@ -119,9 +131,6 @@ def main(force: bool) -> None:
     }
     REPORTS.mkdir(exist_ok=True)
     (REPORTS / "results.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
-    opened = json.loads(GUARD.read_text(encoding="utf-8")) if GUARD.exists() else []   # 연 기록은 지우지 않고 쌓는다
-    opened.append({"opened_at": results["opened_at"], "commit": results["commit"], "forced": force})
-    GUARD.write_text(json.dumps(opened, ensure_ascii=False, indent=2), encoding="utf-8")
     plot(y, thin, risks)
     print(json.dumps(results, ensure_ascii=False, indent=2))
 

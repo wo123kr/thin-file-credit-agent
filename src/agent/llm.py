@@ -19,7 +19,7 @@ class LLMError(Exception):
 
 
 def claude_cli(system: str, prompt: str, timeout: int = TIMEOUT_S) -> str:
-    cmd = ["claude", "-p", "--tools", "", "--model", MODEL, "--output-format", "json",
+    cmd = ["claude", "-p", "--tools", "", "--strict-mcp-config", "--model", MODEL, "--output-format", "json",   # MCP 서버도 붙이지 않음
            "--no-session-persistence", "--setting-sources", "project", "--system-prompt", system]
     with tempfile.TemporaryDirectory(prefix="agent-sandbox-") as cwd:
         try:

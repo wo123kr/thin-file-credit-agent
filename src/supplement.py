@@ -5,11 +5,10 @@
 uv run python src/supplement.py
 """
 import json
-from datetime import datetime
 
 import numpy as np
 
-from final import GUARD, REPORTS, SHARES, git_head, test_risks
+from final import REPORTS, SHARES, log_open, test_risks
 from metrics import bad_rate_at_share
 
 PAIRS = [("A", "B"), ("A", "A+agent"), ("A+agent", "B")]
@@ -28,6 +27,7 @@ def diff_ci(y, rb, rn, share, n=1000, seed=0) -> dict:
 
 
 def main() -> None:
+    log_open("보조 지표 계산(supplement.py, 같은 승인율의 연체율). 모형 · 피처 변경 없음")
     meta, _, _, risks = test_risks()
     tm = meta[meta["part"] == "test"]
     y, thin = tm["is_default"].to_numpy(), tm["thin"].to_numpy()
@@ -36,10 +36,6 @@ def main() -> None:
         for s in SHARES:
             out["thin"][f"{b}->{n}@{int(s * 100)}"] = diff_ci(y[thin], risks[b][thin], risks[n][thin], s)
     (REPORTS / "results_supplement.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-    opened = json.loads(GUARD.read_text(encoding="utf-8"))
-    opened.append({"opened_at": datetime.now().isoformat(timespec="seconds"), "commit": git_head(), "forced": False,
-                   "purpose": "보조 지표 계산(같은 승인율의 연체율). 모형 · 피처 변경 없음"})
-    GUARD.write_text(json.dumps(opened, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(out, ensure_ascii=False, indent=2))
 
 

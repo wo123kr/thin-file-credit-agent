@@ -59,12 +59,17 @@ class Evaluator:
         return None, info
 
     def evaluate(self, proposal: dict) -> tuple[dict, pd.DataFrame | None]:
-        rec = {k: proposal.get(k, "") for k in ("name", "hypothesis", "sql")}
+        if not isinstance(proposal, dict):
+            return {"name": str(proposal)[:60], "hypothesis": "", "sql": "", "decision": "오류",
+                    "reason": "제안이 객체(JSON object)가 아님"}, None
+        rec = {k: proposal.get(k) or "" for k in ("name", "hypothesis", "sql")}
         try:
-            raw = sandbox().run(proposal.get("sql", ""))
+            raw = sandbox().run(proposal.get("sql"))
             new = validate_new(raw, self.meta.index, list(self.feats.columns))
         except SqlRejected as e:
             return {**rec, "decision": "오류", "reason": str(e)}, None
+        except Exception as e:  # noqa: BLE001 — 에이전트 출력이 낸 예상 밖 오류도 그 제안만 오류로 기록하고 루프는 계속
+            return {**rec, "decision": "오류", "reason": f"처리 중 오류 {type(e).__name__}: {str(e)[:200]}"}, None
         rec["columns"] = list(new.columns)
         why, info = self.gates(new)
         rec.update(info)
@@ -77,8 +82,8 @@ class Evaluator:
         X = self.feats.join(new).loc[self.dev_ids]
         s = cv_scores(X, self.y, self.thin, self.fold_list)
         dt, da = s["thin"] - base["thin"], s["all"] - base["all"]
-        rec.update(delta_thin_mean=round(float(dt.mean()), 5), delta_all_mean=round(float(da.mean()), 5),
-                   pos_share=round(float((dt > 0).mean()), 3))
+        rec.update(delta_thin_mean=round(float(dt.mean()), 4), delta_all_mean=round(float(da.mean()), 4),
+                   pos_share=round(float((dt > 0).mean()), 3))   # 이유 문장과 같은 자릿수(4)로 한 번만 반올림
         ok = dt.mean() >= MIN_DELTA_THIN and (dt > 0).mean() >= MIN_POS_SHARE and da.mean() >= MIN_DELTA_ALL
         if ok:
             return {**rec, "decision": "채택", "reason": "기준 통과"}, new

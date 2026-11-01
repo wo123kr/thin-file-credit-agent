@@ -33,6 +33,8 @@ def validate_new(df: pd.DataFrame, ids: pd.Index, existing: list[str]) -> pd.Dat
     """에이전트 SQL 결과 모양 검사 → 고객 id 순서로 맞춘 새 피처 열들. 어긋나면 SqlRejected."""
     if "id" not in df.columns:
         raise SqlRejected("결과에 id 열이 없습니다")
+    if not pd.api.types.is_integer_dtype(df["id"]):
+        raise SqlRejected("id 는 정수 고객 번호여야 합니다")
     if df["id"].duplicated().any():
         raise SqlRejected("고객 1명이 여러 행입니다(id 중복). GROUP BY id 로 한 행씩 내 주세요")
     cols = [c for c in df.columns if c != "id"]
