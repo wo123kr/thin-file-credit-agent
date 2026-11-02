@@ -26,13 +26,17 @@ LLM 에이전트가 신용평가 피처를 제안하고, 코드가 검증해 채
 | 겹 | 무엇을 막나 | 어디 |
 |---|---|---|
 | 데이터 분리 | 분석용 DuckDB 에는 `clients` · `monthly` 두 표만. 라벨 · 성별 · 혼인 · 나이는 다른 파일 | `src/data.py` |
-| 문장 검사 | `json_serialize_sql` 로 SELECT 문 하나만 통과, 구문 나무에서 표는 두 개만, 표 함수(read_csv 등) 금지 | `src/sandbox.py` |
+| 문장 검사 | `json_serialize_sql` 로 SELECT 문 하나만 통과(SHOW 는 예외, 아래 「알려진 틈」), 구문 나무에서 표는 두 개만, 표 함수(read_csv 등) 금지 | `src/sandbox.py` |
 | 연결 | 읽기 전용으로 열고 외부 접근(파일 · 네트워크)을 끈 뒤 설정 잠금. 문장 검사를 건너뛰어도 막힘 | `src/sandbox.py` |
 | 시간 | 30초 넘으면 끊음 | `src/sandbox.py` |
 | 출력 모양 | 고객 1명 1행, `f_` 로 시작하는 숫자 열 1~3개 | `src/features.py` |
 | 누수 · 중복 | 피처 하나로 AUC 0.85 초과면 누수 의심, 기존 피처와 순위 상관 0.98 초과면 같은 정보 | `src/agent/evaluate.py` |
 | 결정 | 채택 · 기각은 코드가. LLM 은 숫자를 정하지 않음 | `src/agent/evaluate.py` |
 | 시험 데이터 | 마지막에 한 번만. `final.py` 는 두 번째 실행이 막히고, 시험 데이터를 여는 스크립트는 계산 전에 `reports/test_opened.json` 에 연 기록(커밋, 커밋 전 변경이면 -dirty)을 쌓음 | `src/final.py` · `src/supplement.py` |
+
+새 눈 검토 때 손으로 넣어 본 공격 문장 가운데 59개는 `tests/test_attacks.py` 에 시험으로 고정했습니다. 파일을 표처럼 읽기 · 표 함수 · CTE 이름으로 가리기 · 시스템 표 · SELECT 가 아닌 문장 43개는 실행 전 문장 검사에서, 문장 검사를 건너뛰고 연결에 바로 넣은 설정 변경 · 쓰기 · 확장 설치 16개는 연결에서 막힙니다.
+
+알려진 틈: `SHOW` 문(`SHOW ALL TABLES` 등)과 카탈로그를 붙인 이름(`analysis.main.clients`)은 문장 검사를 통과하고, 스칼라 함수는 검사하지 않습니다. 보이는 것은 메타데이터와 허용된 두 표뿐이고 라벨 · 파일에는 연결 겹 때문에 닿지 않아 그대로 두었습니다. 실제 서비스라면 문장 종류를 SELECT 로만 좁히고 함수 허용 목록을 두겠습니다.
 
 LLM 은 이 PC 의 Claude Code CLI(`claude -p`)를 도구 없이(`--tools ""`), 빈 임시 폴더에서, 대화 기록을 남기지 않게 부릅니다.
 
@@ -85,6 +89,7 @@ LLM 은 이 PC 의 Claude Code CLI(`claude -p`)를 도구 없이(`--tools ""`), 
 ## 읽는 법
 
 - 실험 1 에서 채택이 없었다고 에이전트가 쓸모없다는 뜻은 아닙니다. 한 번의 실행 · 16개 제안 범위에서는 사람 피처 위에 기준을 넘는 개선이 없었고, 6개월짜리 짧은 이력에 남은 정보가 적을 가능성이 큽니다(단정은 못 함). 사람 피처가 없을 때는 에이전트가 같은 방향의 신호(연체 추세, 청구 대비 납부)를 스스로 찾았습니다.
+- 에이전트가 찾은 4개 열이 사람 피처와 얼마나 겹치는지 개발 데이터만으로 쟀습니다(`src/overlap.py` → `reports/overlap.json`, 라벨 안 씀). 얇은 이력 고객에서 `f_underpay_cnt` 는 사람의 납부 비율과 순위 상관 -0.97, `f_status_std` 는 최장 연체와 0.84, `f_pay_cover_avg` 는 납부 비율과 0.86 입니다. 사람 피처 11개로 설명되는 비율(R²)은 0.75~0.96 입니다. 사람 피처와 덜 겹치는 것은 `f_status_trend`(최근 3달과 이전 3달의 상환 상태 차이) 하나로, 가장 큰 상관이 0.45 · R² 0.65 입니다. 에이전트는 대부분 사람이 이미 만든 피처를 다시 찾았고, 실험 1 에서 채택이 없었던 것과 맞는 결과입니다.
 - 채택 기준이 엄격해서 +0.0018 같은 작은 개선은 버려졌습니다. 기준은 결과를 본 뒤에 바꾸지 않았습니다. 작은 개선을 많이 받아들이면 개발 데이터에 맞추게 되고, 시험 데이터에서 사라지기 쉽기 때문입니다.
 - 실제 데이터가 훨씬 길고 넓다면(거래 · 앱 이용 · 결제처) 에이전트가 찾을 공간도 커집니다. 이 실험은 그 방식을 안전하게 돌리는 틀을 보여 주는 데 무게가 있습니다.
 
@@ -103,12 +108,13 @@ LLM 은 이 PC 의 Claude Code CLI(`claude -p`)를 도구 없이(`--tools ""`), 
 uv sync
 # data/raw/ 에 UCI 원본 「default of credit card clients.xls」를 둔 뒤
 uv run python src/data.py                                 # 분석 DB · 라벨 · 보호 속성 · 나누기
-uv run python -m unittest discover -s tests               # 시험 14개
+uv run python -m unittest discover -s tests               # 시험 17개(공격 문장 59개 포함)
 uv run python src/agent/loop.py --base b                  # 실험 1 (Claude Code CLI 필요)
 uv run python src/agent/loop.py --base a                  # 실험 2
 uv run python src/report_agent.py                         # 기록 → reports/agent_log_*.md
 uv run python src/final.py                                # 시험 데이터 한 번 열기
 uv run python src/supplement.py                           # 보조 지표
+uv run python src/overlap.py                              # 에이전트 피처와 사람 피처의 겹침(개발 데이터만)
 ```
 
 ## 만든 방식

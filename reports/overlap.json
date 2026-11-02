@@ -1,0 +1,92 @@
+{
+  "note": "개발 데이터만 · 라벨 안 씀. 순위 상관(스피어만), R² = 사람 피처 11개(순위)로 그 열(순위)을 선형 회귀로 설명한 비율",
+  "human_features": [
+    "delinq_max_6m",
+    "delinq_months_6m",
+    "delinq_months_3m",
+    "idle_months_6m",
+    "billed_months_6m",
+    "util_avg_6m",
+    "util_max_6m",
+    "bill_trend_6m",
+    "paid_to_limit_6m",
+    "pay_ratio_avg_5m",
+    "zero_pay_months_5m"
+  ],
+  "dev_all": {
+    "f_status_trend": {
+      "top_human": {
+        "delinq_months_3m": 0.436,
+        "billed_months_6m": -0.278,
+        "bill_trend_6m": 0.217
+      },
+      "r2_from_all_human": 0.515,
+      "n": 24000
+    },
+    "f_status_std": {
+      "top_human": {
+        "delinq_max_6m": 0.743,
+        "delinq_months_6m": 0.716,
+        "delinq_months_3m": 0.64
+      },
+      "r2_from_all_human": 0.7,
+      "n": 24000
+    },
+    "f_pay_cover_avg": {
+      "top_human": {
+        "pay_ratio_avg_5m": 0.995,
+        "util_avg_6m": -0.759,
+        "util_max_6m": -0.669
+      },
+      "r2_from_all_human": 0.99,
+      "n": 22883
+    },
+    "f_underpay_cnt": {
+      "top_human": {
+        "pay_ratio_avg_5m": -0.85,
+        "util_avg_6m": 0.783,
+        "util_max_6m": 0.683
+      },
+      "r2_from_all_human": 0.83,
+      "n": 24000
+    }
+  },
+  "dev_thin": {
+    "f_status_trend": {
+      "top_human": {
+        "bill_trend_6m": 0.452,
+        "pay_ratio_avg_5m": -0.451,
+        "delinq_months_3m": 0.335
+      },
+      "r2_from_all_human": 0.645,
+      "n": 3023
+    },
+    "f_status_std": {
+      "top_human": {
+        "delinq_max_6m": 0.843,
+        "delinq_months_6m": 0.841,
+        "delinq_months_3m": 0.824
+      },
+      "r2_from_all_human": 0.87,
+      "n": 3023
+    },
+    "f_pay_cover_avg": {
+      "top_human": {
+        "pay_ratio_avg_5m": 0.858,
+        "util_avg_6m": -0.439,
+        "util_max_6m": -0.403
+      },
+      "r2_from_all_human": 0.75,
+      "n": 1906
+    },
+    "f_underpay_cnt": {
+      "top_human": {
+        "pay_ratio_avg_5m": -0.971,
+        "util_avg_6m": 0.534,
+        "zero_pay_months_5m": 0.503
+      },
+      "r2_from_all_human": 0.961,
+      "n": 3023
+    }
+  }
+}
